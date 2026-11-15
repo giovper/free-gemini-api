@@ -21,16 +21,19 @@ type GeminiResponse struct {
 	Videos         []string     `json:"videos"`
 	Music          []MusicTrack `json:"music,omitempty"`
 	Elapsed        float64      `json:"elapsed"`
+	ActualModel      string       `json:"actual_model,omitempty"`
+	FallbackDetected bool         `json:"fallback_detected,omitempty"`
 }
 
 // ChatRequest represents the incoming request payload
 type ChatRequest struct {
-	Prompt  string `json:"prompt"`
-	Message string `json:"message"`
-	NewChat bool   `json:"new_chat"`
-	UserID  string `json:"user_id"`
-	Stream  bool   `json:"stream"`
-	Model   string `json:"model,omitempty"`
+	Prompt        string `json:"prompt"`
+	Message       string `json:"message"`
+	NewChat       bool   `json:"new_chat"`
+	UserID        string `json:"user_id"`
+	Stream        bool   `json:"stream"`
+	Model         string `json:"model,omitempty"`
+	ThinkingLevel string `json:"thinking_level,omitempty"`
 }
 
 

@@ -78,13 +78,13 @@ func TestE2E_RoutesAndTierTracking(t *testing.T) {
 		if id == "gemini-3.8-flash" && tier == "free" {
 			foundFlash = true
 		}
-		if id == "gemini-3.1-pro" && tier == "subscription" {
+		if id == "gemini-3.1-pro" && (tier == "subscription" || tier == "auth") {
 			foundPro = true
 		}
 		if id == "gemini-3.5-flash-lite" && tier == "free" {
 			foundLite = true
 		}
-		if id == "gemini-4-argon" && tier == "free" {
+		if id == "gemini-4-argon" && (tier == "free" || tier == "auth") {
 			foundArgon = true
 		}
 	}

@@ -21,12 +21,13 @@ type OpenAIChatMessage struct {
 }
 
 type OpenAIChatCompletionRequest struct {
-	Model      string              `json:"model"`
-	Messages   []OpenAIChatMessage `json:"messages"`
-	Tools      []map[string]any    `json:"tools,omitempty"`
-	ToolChoice any                 `json:"tool_choice,omitempty"`
-	Stream     bool                `json:"stream"`
-	User       *string             `json:"user,omitempty"`
+	Model         string              `json:"model"`
+	ThinkingLevel *string             `json:"thinking_level,omitempty"`
+	Messages      []OpenAIChatMessage `json:"messages"`
+	Tools         []map[string]any    `json:"tools,omitempty"`
+	ToolChoice    any                 `json:"tool_choice,omitempty"`
+	Stream        bool                `json:"stream"`
+	User          *string             `json:"user,omitempty"`
 }
 
 type OpenAIChoice struct {

@@ -16,7 +16,7 @@ BASE URL:
 
 CORE API ENDPOINTS:
   POST /v1/chat/completions   OpenAI-compatible chat & streaming completions
-  GET  /v1/models             List dynamic models (gemini-3.8-flash [Default], gemini-4-argon, gemini-3.1-pro)
+  GET  /v1/models             List dynamic models (Carbon, Argon, Hydrogen, Flash 3.8/3.7/3.6/3.5, Pro 3.1)
   POST /v1/models             Register custom models & mode hashes at runtime
   POST /v1/models/discover    Autonomous model & tier discovery across connected accounts
   GET  /v1/workers            Live worker pool metrics, active accounts & throughput
@@ -37,13 +37,20 @@ MULTI-AGENT HEADERS:
   X-Session-ID: <id>          Custom session identifier
   X-Conversation-ID: <id>     Gemini server-side thread continuation
 
-BUILT-IN TOOLS & CAPABILITIES:
-  * Gemini 4 Argon & Thinking Native deep reasoning (High=2, Medium=4, Low=1)
+BUILT-IN MODELS & THINKING LEVELS:
+  * Gemini 4 Carbon           (Default: medium; Levels: low=1, medium=4, high=2)
+  * Gemini 4 Argon            (Default: medium; Levels: low=1, medium=4, high=2)
+  * Gemini 4 Hydrogen         (Default: high;   Levels: low=1, medium=4, high=2, xhigh=8)
+  * Gemini 3.8 Flash          (Default: medium; Levels: low=1, medium=4, high=2)
+  * Gemini 3.7 Flash          (Default: medium; Levels: low=1, medium=4, high=2)
+  * Gemini 3.6 Flash          (Default: medium; Levels: minimal=0, low=1, medium=4, high=2)
+  * Gemini 3.5 Flash          (Default: medium; Levels: minimal=0, low=1, medium=4, high=2)
+  * Gemini 3.5 Flash-Lite     (Default: minimal; Levels: minimal=0, low=1, medium=4, high=2)
+  * Gemini 3.1 Pro            (Pro Tier reasoning; Levels: low=1, medium=4, high=2)
   * Arranger Engine           Native OpenAI Tool / Function calling & Output Sanitizer
   * Multi-Account Queue       Auto load balancing across 1 to 100+ accounts with circuit breaker
   * HTTP/3 QUIC & TLS         Chrome 152 JA4 fingerprint simulation with 0-RTT resumption
   * Multimodal Vision         Supports PNG, JPG, WebP, GIF, and MP4 video uploads
-  * Gemini Music Gen          Generates AI instrumental and vocal audio tracks
   * Dual Analytics Export     Automated SQLite WAL persistence + JSON & Excel reports
 
 SAMPLE USAGE:
@@ -53,10 +60,15 @@ SAMPLE USAGE:
     -H "Content-Type: application/json" \
     -d '{"model": "gemini-3.8-flash", "messages": [{"role": "user", "content": "Explain quantum computing in 1 line."}]}'
 
-  # 2. Frontier Deep Thinking (Gemini 4 Argon High):
+  # 2. Frontier Thinking (Gemini 4 Argon Medium):
   curl -s -X POST http://127.0.0.1:8001/v1/chat/completions \
     -H "Content-Type: application/json" \
-    -d '{"model": "argon-high", "messages": [{"role": "user", "content": "Solve this logic puzzle with full step-by-step thinking."}]}'
+    -d '{"model": "argon", "messages": [{"role": "user", "content": "Solve step by step."}]}'
+
+  # 3. Frontier Deep Thinking (Gemini 4 Hydrogen with thinking_level):
+  curl -s -X POST http://127.0.0.1:8001/v1/chat/completions \
+    -H "Content-Type: application/json" \
+    -d '{"model": "gemini-4-hydrogen", "thinking_level": "xhigh", "messages": [{"role": "user", "content": "Design distributed consensus algorithm."}]}'
 
   # 3. Multi-Agent Sticky Affinity:
   curl -s -X POST http://127.0.0.1:8001/v1/chat/completions \
@@ -90,6 +102,7 @@ SAMPLE USAGE:
 
 CLI COMMANDS & MODES:
   ./goapi                     Start the API server daemon (Port 8001 & WS 9226)
+  ./goapi --temp              Start server with Temporary Chats enabled (chats won't save to Gemini Web)
   ./goapi --help              Display this CLI help manual
   ./goapi --stats             Print instant SQLite database analytics in terminal
   ./goapi --export out.json   Export database analytics to JSON file

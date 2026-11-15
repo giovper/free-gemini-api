@@ -74,6 +74,30 @@ func InitWorkerPool() {
 	_ = GetWorkerPool()
 }
 
+// HasSubscriptionWorker returns true if there is at least one active, authenticated worker with subscription tier
+func (p *WorkerPool) HasSubscriptionWorker() bool {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	for _, w := range p.workers {
+		if w.Tier == "subscription" && w.ID != "guest" {
+			return true
+		}
+	}
+	return false
+}
+
+// HasAuthenticatedWorker returns true if there is at least one active, authenticated worker (non-guest)
+func (p *WorkerPool) HasAuthenticatedWorker() bool {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	for _, w := range p.workers {
+		if w.ID != "guest" {
+			return true
+		}
+	}
+	return false
+}
+
 // ReloadPool scans cookies directory, boots up new workers, and reloads active sessions
 func (p *WorkerPool) ReloadPool() {
 	p.mu.Lock()
@@ -123,8 +147,8 @@ func (p *WorkerPool) ReloadPool() {
 		_ = client.InitSession()
 
 		workerTier := client.AccountTier
-		if workerTier == "" || workerTier == "free" {
-			workerTier = "subscription"
+		if workerTier == "" {
+			workerTier = "free"
 		}
 		worker := &AccountWorker{
 			ID:          accID,
@@ -239,6 +263,9 @@ func (p *WorkerPool) AcquireWorkerWithTier(ctx context.Context, affinityKey stri
 			if requiredTier == "subscription" && w.Tier != "subscription" && w.ID == "guest" {
 				continue
 			}
+			if (requiredTier == "auth" || requiredTier == "pro") && w.ID == "guest" {
+				continue
+			}
 			hasCandidate = true
 			w.mu.Lock()
 			if w.CooldownUntil.IsZero() || time.Now().After(w.CooldownUntil) {
@@ -262,6 +289,8 @@ func (p *WorkerPool) AcquireWorkerWithTier(ctx context.Context, affinityKey stri
 			tierName := "free"
 			if requiredTier == "subscription" {
 				tierName = "subscription"
+			} else if requiredTier == "auth" || requiredTier == "pro" {
+				tierName = "authenticated"
 			}
 			return nil, fmt.Errorf("rate_limit_exceeded: all %s tier Google accounts reached rate limit / quota. Cooldown active, next worker ready in %ds. Connect more accounts to increase quota", tierName, secs)
 		}
@@ -272,7 +301,7 @@ func (p *WorkerPool) AcquireWorkerWithTier(ctx context.Context, affinityKey stri
 				for _, w := range p.workers {
 					if w.ID == targetID && w.IsHealthy() && atomic.LoadInt64(&w.InFlight) < p.maxConcurrencyPerWorker {
 						// Ensure tier compatibility
-						if requiredTier != "subscription" || w.Tier == "subscription" || w.ID != "guest" {
+						if (requiredTier != "subscription" && requiredTier != "auth" && requiredTier != "pro") || w.Tier == "subscription" || w.ID != "guest" {
 							atomic.AddInt64(&w.InFlight, 1)
 							w.mu.Lock()
 							w.LastUsed = time.Now()
@@ -348,7 +377,8 @@ func (p *WorkerPool) AcquireWorkerWithTier(ctx context.Context, affinityKey stri
 			}
 
 			// Pass 3: Fall back to guest worker if no authenticated workers available or all on cooldown
-			if bestWorker == nil {
+			// NOTE: Guest worker does not support models requiring authentication (e.g. Pro or Argon)
+			if bestWorker == nil && requiredTier != "subscription" && requiredTier != "auth" && requiredTier != "pro" {
 				for i := 0; i < workersCount; i++ {
 					idx := (int(offset) + i) % workersCount
 					w := p.workers[idx]

@@ -29,6 +29,15 @@ func main() {
 		return
 	}
 
+	// Check for temporary chats flag: --temp, -temp, -t, or --temporary
+	for _, arg := range os.Args[1:] {
+		if arg == "--temp" || arg == "-temp" || arg == "-t" || arg == "--temporary" {
+			gemini.SetTemporaryChats(true)
+			log.Println("🔒 [Mode] Temporary Chats ENABLED (--temp) — Requests will NOT be saved to Gemini Web history")
+			break
+		}
+	}
+
 	// Check if invoked as MCP stdio server
 	if len(os.Args) > 1 && (os.Args[1] == "--mcp" || os.Args[1] == "-mcp" || os.Args[1] == "mcp") {
 		api.RunMCPServer()

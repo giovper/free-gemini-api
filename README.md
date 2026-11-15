@@ -45,16 +45,25 @@ Until now, Argon's thinking controls were locked behind Google's internal web in
 
 ## 📊 Supported Models & Thinking Matrix
 
+> 💡 **Nota sul Protocollo e Reverse-Engineering**:
+> Gli hash interni e i modeID dei modelli sono stati estratti analizzando il traffico di rete reale di `gemini.google.com` tramite l'estensione Chrome **Network Logger - HAR Export**, eseguita sullo **stesso account Google e profilo Chrome** che ospita l'estensione Gemini API Agent.
+> - **Gemini 4 Argon**: supporta sia il suo hash legacy `95a4c0abcba24364` sia la stringa `"argon"` (come riscontrato nel traffico web live).
+> - **Gemini 4 Hydrogen**: utilizza il modeID catturato `56fdd199312815e2`.
+> - **Gemini 4 Carbon**: rimosso dal repository perché disponibile esclusivamente per abbonati Ultra (non accessibile da account Pro).
+> - **Test Diagnostics**: inclusi `gemini-fake-model-1` (hash `aaaaaaaaaaaaaaaa`) e `gemini-fake-model-2` (nome `gemini-6-nonexisting`) per verificare la gestione degli errori da parte di Google.
+
 | Model ID | Aliases | Thinking Depth | Tier | Role & Description |
 |---|---|:---:|:---:|---|
-| **`gemini-4-argon`** | `argon`, `4-argon`, `gemini-4` | Low (1) | Free / Auth | 🌟 **Frontier Intelligence** for complex problem solving |
+| **`gemini-4-argon`** | `argon`, `4-argon`, `gemini-4` | Medium (4) | Free / Auth | 🌟 **Frontier Intelligence** for complex problem solving |
 | **`gemini-4-argon-thinking-high`** | `argon-high`, `thinking-high` | **High (2)** | Free / Auth | 🧠 **Deep Reasoning** with maximum thinking steps |
 | **`gemini-4-argon-thinking-medium`** | `argon-medium`, `thinking-medium` | **Medium (4)** | Free / Auth | ⚖️ **Balanced Reasoning** for code reviews and analysis |
 | **`gemini-4-argon-thinking-low`** | `argon-low`, `thinking-low` | **Low (1)** | Free / Auth | ⚡ **Fast Thinking** with lightweight verification |
-| **`gemini-3.8-flash`** | `flash`, `3.8-flash`, `default` | None | Free | 🚀 **Default Model** — Ultra-fast, balanced multimodal flagship |
-| **`gemini-3.8-flash-thinking-high`** | `flash-high` | High (2) | Free | ⚡ Flash with deep thinking enabled |
-| **`gemini-3.1-pro`** | `pro`, `3.1-pro` | None | Subscription | 💻 Advanced multi-turn coding (Gemini Advanced accounts) |
-| **`gemini-3.1-pro-thinking-high`** | `pro-high` | High (2) | Subscription | 🧠 Pro with deep multi-pass reasoning |
+| **`gemini-4-hydrogen`** | `hydrogen`, `4-hydrogen` | **High (2)** | Free / Auth | 🚀 **Everyday Assistant** with granular thinking (supports `xhigh`) |
+| **`gemini-3.8-flash`** | `flash`, `3.8-flash`, `default` | Medium (4) | Free | 🚀 **Default Model** — Ultra-fast, balanced multimodal flagship |
+| **`gemini-3.5-flash-lite`** | `flash-lite`, `lite` | Minimal (0) | Free | ⚡ **Fastest Answers** with lowest latency |
+| **`gemini-3.1-pro`** | `pro`, `3.1-pro` | Standard | Subscription | 💻 Advanced multi-turn coding (Gemini Advanced accounts) |
+| **`gemini-fake-model-1`** | `fake-1` | Medium (4) | Test | 🧪 Test diagnostico con hash hex inesistente (`aaaaaaaaaaaaaaaa`) |
+| **`gemini-fake-model-2`** | `fake-2` | Medium (4) | Test | 🧪 Test diagnostico con nome inesistente (`gemini-6-nonexisting`) |
 
 ---
 

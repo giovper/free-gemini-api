@@ -18,7 +18,7 @@ type ModelConfig struct {
 	ModeID         string   `json:"mode_id"`         // Internal hex hash (e.g. 56fdd199312815e2)
 	HeaderTemplate string   `json:"header_template"` // JSPB template string
 	ThinkingLevel  int      `json:"thinking_level,omitempty"`
-	MinTier        string   `json:"min_tier"`        // "free" or "subscription"
+	MinTier        string   `json:"min_tier"` // "free" or "subscription"
 	Aliases        []string `json:"aliases,omitempty"`
 	Capabilities   []string `json:"capabilities,omitempty"`
 	IsDefault      bool     `json:"is_default"`
@@ -28,13 +28,16 @@ type ModelConfig struct {
 // BuildHeaderValue constructs the x-goog-ext-525001261-jspb header value.
 //
 // Format verified via live CDP capture (2026-10-14):
-//   [1,null,null,null,null,null,null,null,[caps],null,null,null,null,null,8,<thinkingLevel>,null,null,null,null]
+//
+//	[1,null,null,null,null,null,null,null,[caps],null,null,null,null,null,8,<thinkingLevel>,null,null,null,null]
 //
 // Thinking level sits at index 15:
-//   Low=1, Medium=4, High=2
+//
+//	Low=1, Medium=4, High=2
 //
 // For non-thinking models the classic short format is used:
-//   [1,null,null,null,"<modeID>",null,null,0,[caps],null,null,2]
+//
+//	[1,null,null,null,"<modeID>",null,null,0,[caps],null,null,2]
 func (m *ModelConfig) BuildHeaderValue() string {
 	if m.HeaderTemplate != "" {
 		s := m.HeaderTemplate
@@ -59,7 +62,7 @@ func (m *ModelConfig) BuildHeaderValue() string {
 	}
 	if m.ThinkingLevel > 0 {
 		// Argon-style thinking format with ModeID at index 4 and thinking level at index 15
-		return fmt.Sprintf(`[1,null,null,null,"%s",null,null,null,[4,5,6,8,16,19,20],null,null,null,null,null,8,%d,null,null,null,null]`, m.ModeID, m.ThinkingLevel)
+		return fmt.Sprintf(`[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`, m.ModeID, m.ThinkingLevel)
 	}
 	// Default non-thinking format with modeID
 	return fmt.Sprintf(`[1,null,null,null,"%s",null,null,0,[4],null,null,2]`, m.ModeID)
@@ -80,66 +83,36 @@ var (
 )
 
 // Default models catalog
-var defaultBuiltinModels = []ModelConfig{
-	{
-		ID:             "gemini-3.5-flash-lite",
-		DisplayName:    "Google Gemini 3.5 Flash-Lite",
-		Description:    "Fastest answers — ultra low latency quick answers",
-		ModeID:         "8c46e95b1a07cecc",
-		HeaderTemplate: `[1,null,null,null,"%s",null,null,0,[4],null,null,2]`,
-		MinTier:        "free",
-		Aliases:        []string{"3.5-flash-lite", "flash-lite", "gemini-flash-lite", "gemini-lite", "lite", "fbb127bbb056c959"},
-		Capabilities:   []string{"chat", "stream", "vision", "tools", "fastest"},
-		IsDefault:      false,
-		Source:         "builtin",
-	},
-	{
-		ID:             "gemini-3.8-flash",
-		DisplayName:    "Google Gemini 3.8 Flash",
-		Description:    "All-around help — balanced multi-modal flagship",
-		ModeID:         "56fdd199312815e2",
-		HeaderTemplate: `[1,null,null,null,"%s",null,null,0,[4],null,null,2]`,
-		MinTier:        "free",
-		Aliases:        []string{"3.8-flash", "gemini-flash", "flash", "gemini-3.7-flash", "default"},
-		Capabilities:   []string{"chat", "stream", "vision", "video", "tools"},
-		IsDefault:      true,
-		Source:         "builtin",
-	},
-	{
-		ID:             "gemini-3.1-pro",
-		DisplayName:    "Google Gemini 3.1 Pro",
-		Description:    "Advanced reasoning — complex coding and multi-turn problem solving",
-		ModeID:         "e6fa609c3fa255c0",
-		HeaderTemplate: `[1,null,null,null,"%s",null,null,0,[4],null,null,2]`,
-		MinTier:        "subscription",
-		Aliases:        []string{"3.1-pro", "gemini-pro", "pro", "gemini-3.0-pro", "gemini-2.5-pro", "advanced", "61530e79959ab139"},
-		Capabilities:   []string{"chat", "stream", "vision", "tools", "complex_reasoning"},
-		IsDefault:      false,
-		Source:         "builtin",
-	},
+var DefaultBuiltinModels = []ModelConfig{
+	// ─── Gemini 4 Series (Frontier Intelligence) ──────────────────────────────
+	// NOTE: Gemini 4 Carbon è disponibile solo per account Ultra.
+	// Il suo modeID non è stato catturato (non accessibile da account Pro).
+	// Se in futuro ottieni accesso Ultra, cattura l'hash con HAR Export e aggiungilo qui.
+
+	// NOTE: Dal HAR catturato il 2026-11-15, Google Web usa la stringa "argon"
+	// come modeID. L'hash legacy "95a4c0abcba24364" è mantenuto come alias.
 	{
 		ID:             "gemini-4-argon",
 		DisplayName:    "Google Gemini 4 Argon",
-		Description:    "Complex tasks — next-generation frontier intelligence",
-		ModeID:         "95a4c0abcba24364",
-		// Default Argon without explicit thinking level (uses Low=1 by default per browser)
-		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,5,6,8,16,19,20],null,null,null,null,null,8,1,null,null,null,null]`,
-		MinTier:        "free",
-		Aliases:        []string{"4-argon", "gemini-argon", "argon", "gemini-4", "4", "f44d2958d1f0189a"},
+		Description:    "Complex tasks — next-generation frontier intelligence (Medium=4)",
+		ModeID:         "argon",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  4, // Default Level: medium
+		MinTier:        "auth",
+		Aliases:        []string{"4-argon", "gemini-argon", "argon", "gemini-4", "4", "95a4c0abcba24364", "f44d2958d1f0189a"},
 		Capabilities:   []string{"chat", "stream", "vision", "tools", "complex_tasks", "frontier"},
 		IsDefault:      false,
 		Source:         "builtin",
 	},
 	{
-		ID:             "gemini-4-argon-thinking-high",
-		DisplayName:    "Google Gemini 4 Argon (Thinking High)",
-		Description:    "Complex tasks with extra thorough thinking depth (High=2)",
-		ModeID:         "95a4c0abcba24364",
-		// Thinking level at index 15: High=2 (verified via CDP)
-		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,5,6,8,16,19,20],null,null,null,null,null,8,%d,null,null,null,null]`,
-		ThinkingLevel:  2,
-		MinTier:        "free",
-		Aliases:        []string{"argon-thinking-high", "argon-high", "thinking-high"},
+		ID:             "gemini-4-argon-thinking-low",
+		DisplayName:    "Google Gemini 4 Argon (Thinking Low)",
+		Description:    "Complex tasks with quick and efficient thinking (Low=1)",
+		ModeID:         "argon",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  1,
+		MinTier:        "auth",
+		Aliases:        []string{"gemini-4-argon-low", "argon-thinking-low", "argon-low", "thinking-low"},
 		Capabilities:   []string{"chat", "stream", "thinking", "math", "code", "complex_tasks"},
 		IsDefault:      false,
 		Source:         "builtin",
@@ -148,39 +121,148 @@ var defaultBuiltinModels = []ModelConfig{
 		ID:             "gemini-4-argon-thinking-medium",
 		DisplayName:    "Google Gemini 4 Argon (Thinking Medium)",
 		Description:    "Complex tasks with balanced thinking depth (Medium=4)",
-		ModeID:         "95a4c0abcba24364",
-		// Thinking level at index 15: Medium=4 (verified via CDP)
-		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,5,6,8,16,19,20],null,null,null,null,null,8,%d,null,null,null,null]`,
+		ModeID:         "argon",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
 		ThinkingLevel:  4,
-		MinTier:        "free",
-		Aliases:        []string{"argon-thinking-medium", "argon-medium", "thinking-medium"},
+		MinTier:        "auth",
+		Aliases:        []string{"gemini-4-argon-medium", "argon-thinking-medium", "argon-medium", "thinking-medium"},
 		Capabilities:   []string{"chat", "stream", "thinking", "math", "code", "complex_tasks"},
 		IsDefault:      false,
 		Source:         "builtin",
 	},
 	{
-		ID:             "gemini-4-argon-thinking-low",
-		DisplayName:    "Google Gemini 4 Argon (Thinking Low)",
-		Description:    "Complex tasks with quick and efficient thinking (Low=1)",
-		ModeID:         "95a4c0abcba24364",
-		// Thinking level at index 15: Low=1 (verified via CDP)
-		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,5,6,8,16,19,20],null,null,null,null,null,8,%d,null,null,null,null]`,
+		ID:             "gemini-4-argon-thinking-high",
+		DisplayName:    "Google Gemini 4 Argon (Thinking High)",
+		Description:    "Complex tasks with extra thorough thinking depth (High=2)",
+		ModeID:         "argon",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  2,
+		MinTier:        "auth",
+		Aliases:        []string{"gemini-4-argon-high", "argon-thinking-high", "argon-high", "thinking-high"},
+		Capabilities:   []string{"chat", "stream", "thinking", "math", "code", "complex_tasks"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+
+	// NOTE: Il modeID di Hydrogen "56fdd199312815e2" è stato catturato dal HAR il 2026-11-15.
+	// È lo stesso hash usato anche da Flash 3.8 — Google potrebbe condividere l'infrastruttura.
+	{
+		ID:             "gemini-4-hydrogen",
+		DisplayName:    "Google Gemini 4 Hydrogen",
+		Description:    "Everyday help — fast and efficient daily driver (High=2)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  2, // Default Level: high
+		MinTier:        "free",
+		Aliases:        []string{"4-hydrogen", "gemini-hydrogen", "hydrogen"},
+		Capabilities:   []string{"chat", "stream", "vision", "thinking", "tools", "complex_architecture", "frontier"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-4-hydrogen-thinking-low",
+		DisplayName:    "Google Gemini 4 Hydrogen (Thinking Low)",
+		Description:    "Extreme reasoning with quick thinking pass (Low=1)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
 		ThinkingLevel:  1,
 		MinTier:        "free",
-		Aliases:        []string{"argon-thinking-low", "argon-low", "thinking-low"},
-		Capabilities:   []string{"chat", "stream", "thinking", "math", "code", "complex_tasks"},
+		Aliases:        []string{"gemini-4-hydrogen-low", "hydrogen-thinking-low", "hydrogen-low"},
+		Capabilities:   []string{"chat", "stream", "vision", "thinking", "tools", "frontier"},
 		IsDefault:      false,
 		Source:         "builtin",
 	},
 	{
-		ID:             "gemini-3.8-flash-thinking-high",
-		DisplayName:    "Google Gemini 3.8 Flash (Thinking High)",
-		Description:    "Fast reasoning with extra thorough thinking depth (High=2)",
+		ID:             "gemini-4-hydrogen-thinking-medium",
+		DisplayName:    "Google Gemini 4 Hydrogen (Thinking Medium)",
+		Description:    "Extreme reasoning with balanced depth (Medium=4)",
 		ModeID:         "56fdd199312815e2",
-		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,5,6,8,16,19,20],null,null,null,null,null,8,%d,null,null,null,null]`,
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  4,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-4-hydrogen-medium", "hydrogen-thinking-medium", "hydrogen-medium"},
+		Capabilities:   []string{"chat", "stream", "vision", "thinking", "tools", "frontier"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-4-hydrogen-thinking-high",
+		DisplayName:    "Google Gemini 4 Hydrogen (Thinking High)",
+		Description:    "Extreme reasoning with thorough depth (High=2)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
 		ThinkingLevel:  2,
 		MinTier:        "free",
-		Aliases:        []string{"flash-thinking-high", "flash-high"},
+		Aliases:        []string{"gemini-4-hydrogen-high", "hydrogen-thinking-high", "hydrogen-high"},
+		Capabilities:   []string{"chat", "stream", "vision", "thinking", "tools", "frontier"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-4-hydrogen-thinking-xhigh",
+		DisplayName:    "Google Gemini 4 Hydrogen (Thinking Extra High)",
+		Description:    "Deepest tier of multi-step reasoning & long-horizon planning (xHigh=8)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  8,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-4-hydrogen-xhigh", "hydrogen-thinking-xhigh", "hydrogen-xhigh"},
+		Capabilities:   []string{"chat", "stream", "vision", "thinking", "tools", "frontier"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+
+	// ─── Fake Models (per testare cosa succede con modeID non validi) ──────────
+	{
+		ID:             "gemini-fake-model-1",
+		DisplayName:    "FAKE Model 1 (Hash Inventato)",
+		Description:    "Test model con un hash hex inventato — per verificare la risposta di Google a un modeID inesistente",
+		ModeID:         "aaaaaaaaaaaaaaaa",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  4,
+		MinTier:        "free",
+		Aliases:        []string{"fake-1", "fake-hash"},
+		Capabilities:   []string{"chat", "test"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-fake-model-2",
+		DisplayName:    "FAKE Model 2 (Nome Inventato)",
+		Description:    "Test model con un nome stringa inventato — per verificare la risposta di Google a un modello inesistente",
+		ModeID:         "gemini-6-nonexisting",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  4,
+		MinTier:        "free",
+		Aliases:        []string{"fake-2", "fake-name"},
+		Capabilities:   []string{"chat", "test"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+
+	// ─── Gemini 3.x Series (Text & Multimodal) ────────────────────────────────
+	{
+		ID:             "gemini-3.8-flash",
+		DisplayName:    "Google Gemini 3.8 Flash",
+		Description:    "All-around help — balanced multi-modal flagship (Medium=4)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  4, // Default Level: medium
+		MinTier:        "free",
+		Aliases:        []string{"3.8-flash", "gemini-flash", "flash", "default"},
+		Capabilities:   []string{"chat", "stream", "vision", "video", "tools"},
+		IsDefault:      true,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.8-flash-thinking-low",
+		DisplayName:    "Google Gemini 3.8 Flash (Thinking Low)",
+		Description:    "Fast reasoning with quick thinking (Low=1)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  1,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.8-flash-low", "flash-thinking-low", "flash-low", "3.8-flash-low"},
 		Capabilities:   []string{"chat", "stream", "thinking", "math", "code"},
 		IsDefault:      false,
 		Source:         "builtin",
@@ -190,24 +272,290 @@ var defaultBuiltinModels = []ModelConfig{
 		DisplayName:    "Google Gemini 3.8 Flash (Thinking Medium)",
 		Description:    "Fast reasoning with balanced thinking depth (Medium=4)",
 		ModeID:         "56fdd199312815e2",
-		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,5,6,8,16,19,20],null,null,null,null,null,8,%d,null,null,null,null]`,
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
 		ThinkingLevel:  4,
 		MinTier:        "free",
-		Aliases:        []string{"flash-thinking-medium", "flash-medium"},
+		Aliases:        []string{"gemini-3.8-flash-medium", "flash-thinking-medium", "flash-medium", "3.8-flash-medium"},
 		Capabilities:   []string{"chat", "stream", "thinking", "math", "code"},
 		IsDefault:      false,
 		Source:         "builtin",
 	},
 	{
-		ID:             "gemini-3.8-flash-thinking-low",
-		DisplayName:    "Google Gemini 3.8 Flash (Thinking Low)",
-		Description:    "Fast reasoning with quick thinking (Low=1)",
+		ID:             "gemini-3.8-flash-thinking-high",
+		DisplayName:    "Google Gemini 3.8 Flash (Thinking High)",
+		Description:    "Fast reasoning with extra thorough thinking depth (High=2)",
 		ModeID:         "56fdd199312815e2",
-		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,5,6,8,16,19,20],null,null,null,null,null,8,%d,null,null,null,null]`,
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  2,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.8-flash-high", "flash-thinking-high", "flash-high", "3.8-flash-high"},
+		Capabilities:   []string{"chat", "stream", "thinking", "math", "code"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+
+	{
+		ID:             "gemini-3.7-flash",
+		DisplayName:    "Google Gemini 3.7 Flash",
+		Description:    "Advanced hybrid reasoning & multimodal intelligence (Medium=4)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  4, // Default Level: medium
+		MinTier:        "free",
+		Aliases:        []string{"3.7-flash", "gemini-3.7"},
+		Capabilities:   []string{"chat", "stream", "vision", "thinking", "tools"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.7-flash-thinking-low",
+		DisplayName:    "Google Gemini 3.7 Flash (Thinking Low)",
+		Description:    "Hybrid reasoning with quick thinking (Low=1)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
 		ThinkingLevel:  1,
 		MinTier:        "free",
-		Aliases:        []string{"flash-thinking-low", "flash-low"},
+		Aliases:        []string{"gemini-3.7-flash-low", "3.7-flash-low"},
 		Capabilities:   []string{"chat", "stream", "thinking", "math", "code"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.7-flash-thinking-medium",
+		DisplayName:    "Google Gemini 3.7 Flash (Thinking Medium)",
+		Description:    "Hybrid reasoning with balanced depth (Medium=4)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  4,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.7-flash-medium", "3.7-flash-medium"},
+		Capabilities:   []string{"chat", "stream", "thinking", "math", "code"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.7-flash-thinking-high",
+		DisplayName:    "Google Gemini 3.7 Flash (Thinking High)",
+		Description:    "Hybrid reasoning with deep deliberation (High=2)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  2,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.7-flash-high", "3.7-flash-high"},
+		Capabilities:   []string{"chat", "stream", "thinking", "math", "code"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+
+	{
+		ID:             "gemini-3.6-flash",
+		DisplayName:    "Google Gemini 3.6 Flash",
+		Description:    "Granular reasoning & high-efficiency multimodal (Medium=4)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  4, // Default Level: medium
+		MinTier:        "free",
+		Aliases:        []string{"3.6-flash", "gemini-3.6"},
+		Capabilities:   []string{"chat", "stream", "vision", "thinking", "tools"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.6-flash-thinking-minimal",
+		DisplayName:    "Google Gemini 3.6 Flash (Thinking Minimal)",
+		Description:    "Near-zero deliberation for minimal latency (Minimal=0)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,0,[4],null,null,2]`,
+		ThinkingLevel:  0,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.6-flash-minimal", "3.6-flash-minimal"},
+		Capabilities:   []string{"chat", "stream", "vision", "tools", "fastest"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.6-flash-thinking-low",
+		DisplayName:    "Google Gemini 3.6 Flash (Thinking Low)",
+		Description:    "Lightweight reasoning pass (Low=1)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  1,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.6-flash-low", "3.6-flash-low"},
+		Capabilities:   []string{"chat", "stream", "thinking", "tools"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.6-flash-thinking-medium",
+		DisplayName:    "Google Gemini 3.6 Flash (Thinking Medium)",
+		Description:    "Balanced reasoning depth (Medium=4)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  4,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.6-flash-medium", "3.6-flash-medium"},
+		Capabilities:   []string{"chat", "stream", "thinking", "tools"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.6-flash-thinking-high",
+		DisplayName:    "Google Gemini 3.6 Flash (Thinking High)",
+		Description:    "Maximum deliberation & deep chain-of-thought (High=2)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  2,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.6-flash-high", "3.6-flash-high"},
+		Capabilities:   []string{"chat", "stream", "thinking", "tools"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+
+	{
+		ID:             "gemini-3.5-flash",
+		DisplayName:    "Google Gemini 3.5 Flash",
+		Description:    "Fast general-purpose assistant (Medium=4)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  4, // Default Level: medium
+		MinTier:        "free",
+		Aliases:        []string{"3.5-flash", "gemini-3.5"},
+		Capabilities:   []string{"chat", "stream", "vision", "thinking", "tools"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.5-flash-thinking-minimal",
+		DisplayName:    "Google Gemini 3.5 Flash (Thinking Minimal)",
+		Description:    "Near-zero deliberation for minimal latency (Minimal=0)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,0,[4],null,null,2]`,
+		ThinkingLevel:  0,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.5-flash-minimal", "3.5-flash-minimal"},
+		Capabilities:   []string{"chat", "stream", "vision", "tools", "fastest"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.5-flash-thinking-low",
+		DisplayName:    "Google Gemini 3.5 Flash (Thinking Low)",
+		Description:    "Lightweight reasoning pass (Low=1)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  1,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.5-flash-low", "3.5-flash-low"},
+		Capabilities:   []string{"chat", "stream", "thinking", "tools"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.5-flash-thinking-medium",
+		DisplayName:    "Google Gemini 3.5 Flash (Thinking Medium)",
+		Description:    "Balanced reasoning depth (Medium=4)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  4,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.5-flash-medium", "3.5-flash-medium"},
+		Capabilities:   []string{"chat", "stream", "thinking", "tools"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.5-flash-thinking-high",
+		DisplayName:    "Google Gemini 3.5 Flash (Thinking High)",
+		Description:    "Maximum deliberation & deep chain-of-thought (High=2)",
+		ModeID:         "56fdd199312815e2",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  2,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.5-flash-high", "3.5-flash-high"},
+		Capabilities:   []string{"chat", "stream", "thinking", "tools"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+
+	{
+		ID:             "gemini-3.5-flash-lite",
+		DisplayName:    "Google Gemini 3.5 Flash-Lite",
+		Description:    "Fastest answers — ultra low latency quick answers (Minimal=0)",
+		ModeID:         "8c46e95b1a07cecc",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,0,[4],null,null,2]`,
+		ThinkingLevel:  0, // Default Level: minimal
+		MinTier:        "free",
+		Aliases:        []string{"3.5-flash-lite", "flash-lite", "gemini-flash-lite", "gemini-lite", "lite", "fbb127bbb056c959"},
+		Capabilities:   []string{"chat", "stream", "vision", "tools", "fastest"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.5-flash-lite-thinking-minimal",
+		DisplayName:    "Google Gemini 3.5 Flash-Lite (Thinking Minimal)",
+		Description:    "Ultra-low latency with near-zero thinking tokens (Minimal=0)",
+		ModeID:         "8c46e95b1a07cecc",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,0,[4],null,null,2]`,
+		ThinkingLevel:  0,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.5-flash-lite-minimal", "flash-lite-minimal"},
+		Capabilities:   []string{"chat", "stream", "vision", "tools", "fastest"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.5-flash-lite-thinking-low",
+		DisplayName:    "Google Gemini 3.5 Flash-Lite (Thinking Low)",
+		Description:    "Ultra-lightweight reasoning on flash-lite (Low=1)",
+		ModeID:         "8c46e95b1a07cecc",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  1,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.5-flash-lite-low", "flash-lite-low"},
+		Capabilities:   []string{"chat", "stream", "vision", "thinking", "tools", "fastest"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.5-flash-lite-thinking-medium",
+		DisplayName:    "Google Gemini 3.5 Flash-Lite (Thinking Medium)",
+		Description:    "Balanced reasoning depth on flash-lite (Medium=4)",
+		ModeID:         "8c46e95b1a07cecc",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  4,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.5-flash-lite-medium", "flash-lite-medium"},
+		Capabilities:   []string{"chat", "stream", "vision", "thinking", "tools"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-3.5-flash-lite-thinking-high",
+		DisplayName:    "Google Gemini 3.5 Flash-Lite (Thinking High)",
+		Description:    "Deep deliberation on flash-lite (High=2)",
+		ModeID:         "8c46e95b1a07cecc",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
+		ThinkingLevel:  2,
+		MinTier:        "free",
+		Aliases:        []string{"gemini-3.5-flash-lite-high", "flash-lite-high"},
+		Capabilities:   []string{"chat", "stream", "vision", "thinking", "tools"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+
+	// ─── Gemini 3.1 Pro (ModeID: e6fa609c3fa255c0, idx 14 = 3 verified via live HAR) ──────
+	{
+		ID:             "gemini-3.1-pro",
+		DisplayName:    "Google Gemini 3.1 Pro",
+		Description:    "Advanced reasoning — complex coding and multi-turn problem solving",
+		ModeID:         "e6fa609c3fa255c0",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,3,%d,null,null,null,null]`,
+		ThinkingLevel:  1,
+		MinTier:        "auth",
+		Aliases:        []string{"3.1-pro", "gemini-pro", "pro", "gemini-3.0-pro", "gemini-2.5-pro", "advanced", "61530e79959ab139"},
+		Capabilities:   []string{"chat", "stream", "vision", "tools", "complex_reasoning"},
 		IsDefault:      false,
 		Source:         "builtin",
 	},
@@ -216,9 +564,9 @@ var defaultBuiltinModels = []ModelConfig{
 		DisplayName:    "Google Gemini 3.1 Pro (Thinking High)",
 		Description:    "Pro reasoning with extra thorough thinking depth (High=2)",
 		ModeID:         "e6fa609c3fa255c0",
-		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,5,6,8,16,19,20],null,null,null,null,null,8,%d,null,null,null,null]`,
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,3,%d,null,null,null,null]`,
 		ThinkingLevel:  2,
-		MinTier:        "subscription",
+		MinTier:        "auth",
 		Aliases:        []string{"pro-thinking-high", "pro-high"},
 		Capabilities:   []string{"chat", "stream", "thinking", "math", "code", "complex_reasoning"},
 		IsDefault:      false,
@@ -227,11 +575,11 @@ var defaultBuiltinModels = []ModelConfig{
 	{
 		ID:             "gemini-3.1-pro-thinking-medium",
 		DisplayName:    "Google Gemini 3.1 Pro (Thinking Medium)",
-		Description:    "Pro reasoning with balanced thinking depth (Medium=4)",
+		Description:    "Pro reasoning with balanced thinking depth (Standard Thinking)",
 		ModeID:         "e6fa609c3fa255c0",
-		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,5,6,8,16,19,20],null,null,null,null,null,8,%d,null,null,null,null]`,
-		ThinkingLevel:  4,
-		MinTier:        "subscription",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,3,%d,null,null,null,null]`,
+		ThinkingLevel:  1, // Note: Pro upstream only accepts 1 (standard) and 2 (high). Level 4 triggers anomaly 37.
+		MinTier:        "auth",
 		Aliases:        []string{"pro-thinking-medium", "pro-medium"},
 		Capabilities:   []string{"chat", "stream", "thinking", "math", "code", "complex_reasoning"},
 		IsDefault:      false,
@@ -242,9 +590,9 @@ var defaultBuiltinModels = []ModelConfig{
 		DisplayName:    "Google Gemini 3.1 Pro (Thinking Low)",
 		Description:    "Pro reasoning with quick thinking (Low=1)",
 		ModeID:         "e6fa609c3fa255c0",
-		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,5,6,8,16,19,20],null,null,null,null,null,8,%d,null,null,null,null]`,
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,3,%d,null,null,null,null]`,
 		ThinkingLevel:  1,
-		MinTier:        "subscription",
+		MinTier:        "auth",
 		Aliases:        []string{"pro-thinking-low", "pro-low"},
 		Capabilities:   []string{"chat", "stream", "thinking", "math", "code", "complex_reasoning"},
 		IsDefault:      false,
@@ -255,9 +603,9 @@ var defaultBuiltinModels = []ModelConfig{
 		DisplayName:    "Google Gemini 3.8 Flash Thinking",
 		Description:    "Deep reasoning with step-by-step thinking scratchpad trace",
 		ModeID:         "56fdd199312815e2",
-		HeaderTemplate: `[1,null,null,null,"%s",null,null,0,[4,5,6,8],null,null,1]`,
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,1,%d,null,null,null,null]`,
 		ThinkingLevel:  1,
-		MinTier:        "subscription",
+		MinTier:        "free",
 		Aliases:        []string{"gemini-thinking", "flash-thinking", "thinking"},
 		Capabilities:   []string{"chat", "stream", "thinking", "math", "code"},
 		IsDefault:      false,
@@ -266,6 +614,8 @@ var defaultBuiltinModels = []ModelConfig{
 }
 
 // GetModelRegistry returns the singleton ModelRegistry
+var defaultBuiltinModels = DefaultBuiltinModels
+
 func GetModelRegistry() *ModelRegistry {
 	registryOnce.Do(func() {
 		globalModelRegistry = &ModelRegistry{
@@ -356,20 +706,54 @@ func (r *ModelRegistry) Resolve(name string) *ModelConfig {
 		}
 	}
 
-	// 3. Substring matching for convenience
+	// 3. Substring / Semantic matching for convenience
+	hasXHigh := strings.Contains(clean, "xhigh") || strings.Contains(clean, "extra-high") || strings.Contains(clean, "max")
+	hasHigh := strings.Contains(clean, "high") && !hasXHigh
+	hasLow := strings.Contains(clean, "low") || strings.Contains(clean, "fast")
+	hasMinimal := strings.Contains(clean, "minimal") || strings.Contains(clean, "min") || strings.HasSuffix(clean, "-0")
+	hasMed := strings.Contains(clean, "medium") || strings.Contains(clean, "med")
+
+	// Gemini 4 Family
+
+	if strings.Contains(clean, "hydrogen") {
+		if hasXHigh {
+			if m, ok := r.models["gemini-4-hydrogen-thinking-xhigh"]; ok {
+				return m
+			}
+		}
+		if hasHigh {
+			if m, ok := r.models["gemini-4-hydrogen-thinking-high"]; ok {
+				return m
+			}
+		}
+		if hasLow {
+			if m, ok := r.models["gemini-4-hydrogen-thinking-low"]; ok {
+				return m
+			}
+		}
+		if hasMed {
+			if m, ok := r.models["gemini-4-hydrogen-thinking-medium"]; ok {
+				return m
+			}
+		}
+		if m, ok := r.models["gemini-4-hydrogen"]; ok {
+			return m
+		}
+	}
+
 	if strings.Contains(clean, "argon") {
-		if strings.Contains(clean, "high") || strings.Contains(clean, "3") {
+		if hasHigh {
 			if m, ok := r.models["gemini-4-argon-thinking-high"]; ok {
 				return m
 			}
 		}
-		if strings.Contains(clean, "med") || strings.Contains(clean, "2") {
-			if m, ok := r.models["gemini-4-argon-thinking-medium"]; ok {
+		if hasLow {
+			if m, ok := r.models["gemini-4-argon-thinking-low"]; ok {
 				return m
 			}
 		}
-		if strings.Contains(clean, "low") || strings.Contains(clean, "1") {
-			if m, ok := r.models["gemini-4-argon-thinking-low"]; ok {
+		if hasMed {
+			if m, ok := r.models["gemini-4-argon-thinking-medium"]; ok {
 				return m
 			}
 		}
@@ -377,11 +761,133 @@ func (r *ModelRegistry) Resolve(name string) *ModelConfig {
 			return m
 		}
 	}
-	if strings.Contains(clean, "lite") {
+
+	// Gemini 3.x Flash Family
+	if strings.Contains(clean, "3.7") {
+		if hasHigh {
+			if m, ok := r.models["gemini-3.7-flash-thinking-high"]; ok {
+				return m
+			}
+		}
+		if hasLow {
+			if m, ok := r.models["gemini-3.7-flash-thinking-low"]; ok {
+				return m
+			}
+		}
+		if hasMed {
+			if m, ok := r.models["gemini-3.7-flash-thinking-medium"]; ok {
+				return m
+			}
+		}
+		if m, ok := r.models["gemini-3.7-flash"]; ok {
+			return m
+		}
+	}
+
+	if strings.Contains(clean, "3.6") {
+		if hasMinimal {
+			if m, ok := r.models["gemini-3.6-flash-thinking-minimal"]; ok {
+				return m
+			}
+		}
+		if hasHigh {
+			if m, ok := r.models["gemini-3.6-flash-thinking-high"]; ok {
+				return m
+			}
+		}
+		if hasLow {
+			if m, ok := r.models["gemini-3.6-flash-thinking-low"]; ok {
+				return m
+			}
+		}
+		if hasMed {
+			if m, ok := r.models["gemini-3.6-flash-thinking-medium"]; ok {
+				return m
+			}
+		}
+		if m, ok := r.models["gemini-3.6-flash"]; ok {
+			return m
+		}
+	}
+
+	if strings.Contains(clean, "3.5") && (strings.Contains(clean, "lite") || strings.Contains(clean, "flash-lite")) {
+		if hasMinimal {
+			if m, ok := r.models["gemini-3.5-flash-lite-thinking-minimal"]; ok {
+				return m
+			}
+		}
+		if hasHigh {
+			if m, ok := r.models["gemini-3.5-flash-lite-thinking-high"]; ok {
+				return m
+			}
+		}
+		if hasLow {
+			if m, ok := r.models["gemini-3.5-flash-lite-thinking-low"]; ok {
+				return m
+			}
+		}
+		if hasMed {
+			if m, ok := r.models["gemini-3.5-flash-lite-thinking-medium"]; ok {
+				return m
+			}
+		}
 		if m, ok := r.models["gemini-3.5-flash-lite"]; ok {
 			return m
 		}
 	}
+
+	if strings.Contains(clean, "3.5") {
+		if hasMinimal {
+			if m, ok := r.models["gemini-3.5-flash-thinking-minimal"]; ok {
+				return m
+			}
+		}
+		if hasHigh {
+			if m, ok := r.models["gemini-3.5-flash-thinking-high"]; ok {
+				return m
+			}
+		}
+		if hasLow {
+			if m, ok := r.models["gemini-3.5-flash-thinking-low"]; ok {
+				return m
+			}
+		}
+		if hasMed {
+			if m, ok := r.models["gemini-3.5-flash-thinking-medium"]; ok {
+				return m
+			}
+		}
+		if m, ok := r.models["gemini-3.5-flash"]; ok {
+			return m
+		}
+	}
+
+	if strings.Contains(clean, "lite") {
+		if hasMinimal {
+			if m, ok := r.models["gemini-3.5-flash-lite-thinking-minimal"]; ok {
+				return m
+			}
+		}
+		if hasHigh {
+			if m, ok := r.models["gemini-3.5-flash-lite-thinking-high"]; ok {
+				return m
+			}
+		}
+		if hasLow {
+			if m, ok := r.models["gemini-3.5-flash-lite-thinking-low"]; ok {
+				return m
+			}
+		}
+		if hasMed {
+			if m, ok := r.models["gemini-3.5-flash-lite-thinking-medium"]; ok {
+				return m
+			}
+		}
+		if m, ok := r.models["gemini-3.5-flash-lite"]; ok {
+			return m
+		}
+	}
+
 	if strings.Contains(clean, "pro") {
 		if canonicalID, ok := r.aliasMap["pro"]; ok {
 			if m, ok := r.models[canonicalID]; ok {
@@ -396,7 +902,22 @@ func (r *ModelRegistry) Resolve(name string) *ModelConfig {
 			}
 		}
 	}
-	if strings.Contains(clean, "flash") {
+	if strings.Contains(clean, "3.8") || strings.Contains(clean, "flash") {
+		if hasHigh {
+			if m, ok := r.models["gemini-3.8-flash-thinking-high"]; ok {
+				return m
+			}
+		}
+		if hasLow {
+			if m, ok := r.models["gemini-3.8-flash-thinking-low"]; ok {
+				return m
+			}
+		}
+		if hasMed {
+			if m, ok := r.models["gemini-3.8-flash-thinking-medium"]; ok {
+				return m
+			}
+		}
 		if m, ok := r.models["gemini-3.8-flash"]; ok {
 			return m
 		}

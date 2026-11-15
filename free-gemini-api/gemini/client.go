@@ -18,6 +18,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"bufio"
 
 	http "github.com/bogdanfinn/fhttp"
 	tls_client "github.com/bogdanfinn/tls-client"
@@ -140,6 +141,9 @@ func (c *GeminiClient) getConvState(modelID string) (string, string, string) {
 }
 
 func (c *GeminiClient) updateConvState(modelID, convID, respID, choiceID string) {
+	if IsTemporaryChatsEnabled() {
+		return
+	}
 	c.convMu.Lock()
 	defer c.convMu.Unlock()
 	if c.convStates == nil {
@@ -529,11 +533,15 @@ func (c *GeminiClient) executeStreamRequest(prompt string, modelName string, onC
 	reqID := fmt.Sprintf("%d", c.ReqID)
 
 	convID, respID, choiceID := c.getConvState(modelCfg.ID)
+	if IsTemporaryChatsEnabled() {
+		convID, respID, choiceID = "", "", ""
+	}
 
 	msgInner := []interface{}{prompt, 0, nil, []interface{}{}, nil, nil, 0}
 	msgLang := []string{"en-GB"}
 	msgContext := []interface{}{convID, respID, choiceID, nil, nil, nil, nil, nil, nil, ""}
 	msgStruct := []interface{}{msgInner, msgLang, msgContext}
+	ApplyTemporaryChatFlags(&msgStruct)
 
 	msgJSON, _ := json.Marshal(msgStruct)
 	fReqVal := []interface{}{nil, string(msgJSON)}
@@ -575,6 +583,14 @@ func (c *GeminiClient) executeStreamRequest(prompt string, modelName string, onC
 
 	response := &GeminiResponse{}
 	parseResponse(rawBody, response)
+
+	if response.FallbackDetected || (response.ActualModel != "" && IsModelDowngraded(modelCfg.ID, response.ActualModel)) {
+		actual := response.ActualModel
+		if actual == "" {
+			actual = "Default Fallback (Anomaly 37 detected)"
+		}
+		LogModelDowngradeWarning(modelCfg.ID, actual, c.cookiesFile)
+	}
 
 	if response.ConversationID != "" {
 		c.updateConvState(modelCfg.ID, response.ConversationID, response.ResponseID, response.ChoiceID)
@@ -627,7 +643,7 @@ func (c *GeminiClient) doStreamRequestQUIC(fullURL string, data url.Values, mode
 		return "", fmt.Errorf("QUIC status %d", resp.StatusCode)
 	}
 
-	return c.readAndProcessStream(resp.Body, onChunk)
+	return c.readAndProcessStream(resp.Body, modelCfg, onChunk)
 }
 
 func (c *GeminiClient) doStreamRequestHTTP2(fullURL string, data url.Values, modelCfg *ModelConfig, onChunk func(text string)) (string, error) {
@@ -664,40 +680,67 @@ func (c *GeminiClient) doStreamRequestHTTP2(fullURL string, data url.Values, mod
 		return "", fmt.Errorf("HTTP2 status %d", resp.StatusCode)
 	}
 
-	return c.readAndProcessStream(resp.Body, onChunk)
+	return c.readAndProcessStream(resp.Body, modelCfg, onChunk)
 }
 
-func (c *GeminiClient) readAndProcessStream(body io.Reader, onChunk func(text string)) (string, error) {
-	bodyBytes, err := io.ReadAll(body)
-	if err != nil {
-		return "", err
-	}
-	rawBody := string(bodyBytes)
+func (c *GeminiClient) readAndProcessStream(
+	body io.Reader,
+	modelCfg *ModelConfig,
+	onChunk func(text string),
+) (string, error) {
+	reader := bufio.NewReader(body)
 
+	var rawBody strings.Builder
 	prevText := ""
-	lines := strings.Split(rawBody, "\n")
-	for i := 0; i < len(lines); i++ {
-		line := strings.TrimSpace(lines[i])
-		if !strings.HasPrefix(line, "[[\"wrb.fr\"") {
-			continue
+	downgradeLogged := false
+
+	for {
+		line, err := reader.ReadString('\n')
+
+		if len(line) > 0 {
+			rawBody.WriteString(line)
+
+			trimmed := strings.TrimSpace(line)
+
+			if strings.HasPrefix(trimmed, "[[") {
+				tempResp := &GeminiResponse{}
+				parseResponse(trimmed, tempResp)
+
+				if modelCfg != nil && !downgradeLogged && (tempResp.FallbackDetected || (tempResp.ActualModel != "" && IsModelDowngraded(modelCfg.ID, tempResp.ActualModel))) {
+					downgradeLogged = true
+					actual := tempResp.ActualModel
+					if actual == "" {
+						actual = "Default Fallback (Anomaly 37 detected)"
+					}
+					LogModelDowngradeWarning(modelCfg.ID, actual, c.cookiesFile)
+				}
+
+				if tempResp.Text != "" && tempResp.Text != prevText {
+					delta := tempResp.Text
+
+					if strings.HasPrefix(delta, prevText) {
+						delta = delta[len(prevText):]
+					}
+
+					if delta != "" && onChunk != nil {
+						onChunk(delta)
+					}
+
+					prevText = tempResp.Text
+				}
+			}
 		}
 
-		tempResp := &GeminiResponse{}
-		parseResponse(line, tempResp)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
 
-		if tempResp.Text != "" && tempResp.Text != prevText {
-			delta := tempResp.Text
-			if strings.HasPrefix(delta, prevText) {
-				delta = delta[len(prevText):]
-			}
-			if delta != "" && onChunk != nil {
-				onChunk(delta)
-			}
-			prevText = tempResp.Text
+			return rawBody.String(), err
 		}
 	}
 
-	return rawBody, nil
+	return rawBody.String(), nil
 }
 
 func (c *GeminiClient) UploadImage(imageBytes []byte, filename string, mimeType string) (string, error) {
@@ -1125,6 +1168,9 @@ func (c *GeminiClient) sendRequest(prompt string, tool string, imageRef []interf
 	reqID := fmt.Sprintf("%d", c.ReqID)
 
 	convID, respID, choiceID := c.getConvState(modelCfg.ID)
+	if IsTemporaryChatsEnabled() {
+		convID, respID, choiceID = "", "", ""
+	}
 
 	imagesPayload := imageRef
 	if imagesPayload == nil {
@@ -1141,6 +1187,8 @@ func (c *GeminiClient) sendRequest(prompt string, tool string, imageRef []interf
 		}
 		msgStruct = append(msgStruct, []string{tool})
 	}
+
+	ApplyTemporaryChatFlags(&msgStruct)
 
 	msgJSON, _ := json.Marshal(msgStruct)
 	fReqVal := []interface{}{nil, string(msgJSON)}
@@ -1184,6 +1232,14 @@ func (c *GeminiClient) sendRequest(prompt string, tool string, imageRef []interf
 
 	response := &GeminiResponse{}
 	parseResponse(rawBody, response)
+
+	if response.FallbackDetected || (response.ActualModel != "" && IsModelDowngraded(modelCfg.ID, response.ActualModel)) {
+		actual := response.ActualModel
+		if actual == "" {
+			actual = "Default Fallback (Anomaly 37 detected)"
+		}
+		LogModelDowngradeWarning(modelCfg.ID, actual, c.cookiesFile)
+	}
 
 	// Direct regex scan for music download URLs in raw body
 	if strings.Contains(rawBody, "contribution.usercontent.google.com") {
@@ -1305,6 +1361,11 @@ func (c *GeminiClient) sendRequestHTTP2(fullURL string, data url.Values, modelCf
 }
 
 func parseResponse(raw string, res *GeminiResponse) {
+	// Detect Google's internal fallback/invalid modeID indicator {"37":[0]}
+	if strings.Contains(raw, `"37":[0]`) || strings.Contains(raw, `\"37\":[0]`) || strings.Contains(raw, `"37": [0]`) || strings.Contains(raw, `\"37\": [0]`) {
+		res.FallbackDetected = true
+	}
+
 	lines := strings.Split(raw, "\n")
 	for _, line := range lines {
 		if !strings.HasPrefix(line, "[[") {
@@ -1342,6 +1403,22 @@ func parseResponse(raw string, res *GeminiResponse) {
 					}
 					if rid, ok := ctxArr[1].(string); ok {
 						res.ResponseID = rid
+					}
+				}
+			}
+
+			if len(inner) > 42 && inner[42] != nil {
+				if mStr, ok := inner[42].(string); ok && mStr != "" {
+					res.ActualModel = mStr
+				}
+			}
+			if res.ActualModel == "" && len(inner) > 40 {
+				for idx := 40; idx < len(inner) && idx <= 45; idx++ {
+					if s, ok := inner[idx].(string); ok {
+						if strings.Contains(s, "Flash") || strings.Contains(s, "Argon") || strings.Contains(s, "Pro") {
+							res.ActualModel = s
+							break
+						}
 					}
 				}
 			}
