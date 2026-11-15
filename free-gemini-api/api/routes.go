@@ -74,7 +74,7 @@ func RegisterRoutes(app *fiber.App) {
 	})
 
 	// OpenAI-compatible models list (dynamically loaded from Model Registry)
-	app.Get("/v1/models", func(c fiber.Ctx) error {
+	handleModelsList := func(c fiber.Ctx) error {
 		reg := gemini.GetModelRegistry()
 		models := reg.GetAll()
 		var list []fiber.Map
@@ -98,7 +98,9 @@ func RegisterRoutes(app *fiber.App) {
 			"object": "list",
 			"data":   list,
 		})
-	})
+	}
+	app.Get("/v1/models", handleModelsList)
+	app.Get("/models", handleModelsList)
 
 	// Dynamic registration/addition of custom models and mode hashes at runtime
 	app.Post("/v1/models", func(c fiber.Ctx) error {
@@ -134,6 +136,7 @@ func RegisterRoutes(app *fiber.App) {
 
 	// OpenAI-compatible chat completions (with Native Tool Calling & Output Arranger)
 	app.Post("/v1/chat/completions", HandleOpenAIChatCompletions)
+	app.Post("/chat/completions", HandleOpenAIChatCompletions)
 
 	// Unified chat endpoint (text, images, screen recordings, ref videos)
 	app.Post("/chat", HandleUnifiedChat)
