@@ -1,6 +1,6 @@
 # 🧩 Gemini Api Agent (Chrome Extension)
 
-A lightweight, automated Chrome Extension (Manifest V3) that automatically syncs active Google Gemini session cookies to your local **[Free Gemini API Server](https://github.com/kodelyx/free-gemini-api)** via real-time WebSockets.
+A lightweight, automated Chrome Extension (Manifest V3) that automatically syncs active Google Gemini session cookies to your local **[Free Gemini API Server](https://github.com/giovper/free-gemini-api)** via real-time WebSockets.
 
 ---
 
@@ -8,7 +8,7 @@ A lightweight, automated Chrome Extension (Manifest V3) that automatically syncs
 
 1. **Download / Clone this repository:**
    ```bash
-   git clone https://github.com/kodelyx/gemini-extension.git
+   git clone https://github.com/giovper/free-gemini-api.git
    ```
 2. Open Google Chrome and navigate to:
    ```text
@@ -32,5 +32,5 @@ A lightweight, automated Chrome Extension (Manifest V3) that automatically syncs
 
 ## 🔗 Related Repositories
 
-- 🚀 **[Free Gemini API Server (Go + Needle 2 SLM + SQLite)](https://github.com/kodelyx/free-gemini-api)**
-- 🐍 **[Gemini Engine Python SDK](https://github.com/kodelyx/free-gemini-api)**
+- 🚀 **[Free Gemini API Server (Go + Needle 2 SLM + SQLite)](https://github.com/giovper/free-gemini-api)**
+- 🐍 **[Gemini Engine Python SDK](https://github.com/giovper/free-gemini-api)**

@@ -2,11 +2,11 @@
 
 <div align="center">
 
-[![Frontier Model](https://img.shields.io/badge/Frontier_Model-Gemini_4_Argon-8A2BE2?style=for-the-badge&logo=google)](https://github.com/kodelyx/free-gemini-api)
-[![Thinking Depth](https://img.shields.io/badge/Deep_Thinking-High_%7C_Medium_%7C_Low-00E5FF?style=for-the-badge)](https://github.com/kodelyx/free-gemini-api)
-[![Pricing](https://img.shields.io/badge/Cost-100%25_FREE_Unlimited-00C853?style=for-the-badge)](https://github.com/kodelyx/free-gemini-api)
-[![OpenAI Compatible](https://img.shields.io/badge/OpenAI_Standard-/v1/chat/completions-FF6F00?style=for-the-badge&logo=openai)](https://github.com/kodelyx/free-gemini-api)
-[![Transport](https://img.shields.io/badge/Transport-HTTP%2F3_QUIC_%2B_Pure_Go-007ACC?style=for-the-badge&logo=go)](https://github.com/kodelyx/free-gemini-api)
+[![Frontier Model](https://img.shields.io/badge/Frontier_Model-Gemini_4_Argon-8A2BE2?style=for-the-badge&logo=google)](https://github.com/giovper/free-gemini-api)
+[![Thinking Depth](https://img.shields.io/badge/Deep_Thinking-High_%7C_Medium_%7C_Low-00E5FF?style=for-the-badge)](https://github.com/giovper/free-gemini-api)
+[![Pricing](https://img.shields.io/badge/Cost-100%25_FREE_Unlimited-00C853?style=for-the-badge)](https://github.com/giovper/free-gemini-api)
+[![OpenAI Compatible](https://img.shields.io/badge/OpenAI_Standard-/v1/chat/completions-FF6F00?style=for-the-badge&logo=openai)](https://github.com/giovper/free-gemini-api)
+[![Transport](https://img.shields.io/badge/Transport-HTTP%2F3_QUIC_%2B_Pure_Go-007ACC?style=for-the-badge&logo=go)](https://github.com/giovper/free-gemini-api)
 
 <p align="center">
   <b>The first open-source, OpenAI-compatible proxy engine that unlocks Google's next-generation <ins>Gemini 4 Argon</ins> frontier model with customizable Thinking Levels (<kbd>High</kbd>, <kbd>Medium</kbd>, <kbd>Low</kbd>) — 100% Free & Unlimited.</b>
@@ -73,7 +73,7 @@ Until now, Argon's thinking controls were locked behind Google's internal web in
 
 #### Option A: Native Go (Recommended)
 ```bash
-git clone https://github.com/kodelyx/free-gemini-api.git
+git clone https://github.com/giovper/free-gemini-api.git
 cd free-gemini-api/free-gemini-api
 go run main.go
 ```
@@ -265,3 +265,9 @@ If you find **Gemini 4 Argon Free API** helpful, please give this repository a �
 ## 📄 License
 
 MIT License. Developed for the developer and AI research community.
+
+---
+
+## 💡 Acknowledgements & Upstream
+
+This project is forked and extended from the original work by [kodelyx/free-gemini-api](https://github.com/kodelyx/free-gemini-api), featuring live HAR-extracted Gemini Pro Mode IDs, multi-level Argon reasoning, timeout fixes, and real-time parallel model diagnostics.
