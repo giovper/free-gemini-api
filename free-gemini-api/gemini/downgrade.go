@@ -28,13 +28,16 @@ func IsModelDowngraded(requestedModel, actualModel string) bool {
 		return true
 	}
 
-	// If requested Gemini 4 models (Argon, Hydrogen):
+	// If requested Gemini 4 models (Argon, Hydrogen, Neon):
 	// Google upstream must return a model in the Gemini 4 family or matching the requested tier
 	if strings.Contains(req, "argon") {
-		return !strings.Contains(act, "argon") && !strings.Contains(act, "hydrogen") && !strings.Contains(act, "gemini 4")
+		return !strings.Contains(act, "argon") && !strings.Contains(act, "hydrogen") && !strings.Contains(act, "neon") && !strings.Contains(act, "gemini 4")
 	}
 	if strings.Contains(req, "hydrogen") {
-		return !strings.Contains(act, "hydrogen") && !strings.Contains(act, "argon") && !strings.Contains(act, "gemini 4")
+		return !strings.Contains(act, "hydrogen") && !strings.Contains(act, "argon") && !strings.Contains(act, "neon") && !strings.Contains(act, "gemini 4")
+	}
+	if strings.Contains(req, "neon") {
+		return !strings.Contains(act, "neon") && !strings.Contains(act, "argon") && !strings.Contains(act, "hydrogen") && !strings.Contains(act, "gemini 4")
 	}
 
 	// If requested Gemini 3.1 Pro (or Pro variant):

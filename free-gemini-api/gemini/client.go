@@ -1415,7 +1415,7 @@ func parseResponse(raw string, res *GeminiResponse) {
 			if res.ActualModel == "" && len(inner) > 40 {
 				for idx := 40; idx < len(inner) && idx <= 45; idx++ {
 					if s, ok := inner[idx].(string); ok {
-						if strings.Contains(s, "Flash") || strings.Contains(s, "Argon") || strings.Contains(s, "Pro") {
+						if strings.Contains(s, "Flash") || strings.Contains(s, "Argon") || strings.Contains(s, "Neon") || strings.Contains(s, "Hydrogen") || strings.Contains(s, "Pro") {
 							res.ActualModel = s
 							break
 						}

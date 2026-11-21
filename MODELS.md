@@ -10,6 +10,7 @@ Dall'interfaccia web di `gemini.google.com` (verificata da cattura del traffico 
 
 | Modello Web | API Model ID | ModeID / Hash | Livello Default | Thinking Levels Supportati | Note & Ruolo |
 | :--- | :--- | :--- | :---: | :--- | :--- |
+| **4 Neon** (*Frontier adattivo*) | `gemini-4-neon` | `"neon"` / `e6fa609c3fa255c0` | `medium` (4) | `minimal` (0), `low` (1), `medium` (4), `high` (2), `xhigh` (8) | 🌟 Catturato dal HAR `net-log-gemini-neon.har` (2026-11-21): family `3`, thinking adattivo multi-livello. |
 | **4 Argon** (*Codice e analisi*) | `gemini-4-argon` | `"argon"` / `95a4c0abcba24364` | `medium` (4) | `low` (1), `medium` (4), `high` (2) | 🧠 Ragionamento frontier per compiti complessi, codice e analisi. |
 | **4 Hydrogen** (*Aiuto quotidiano*) | `gemini-4-hydrogen` | `56fdd199312815e2` | `high` (2) | `low` (1), `medium` (4), `high` (2), `xhigh` (8) | ⚡ Modello rapido quotidiano con reasoning avanzato e supporto ricerca. |
 | **3.5 Flash-Lite** (*Risposte rapide*) | `gemini-3.5-flash-lite` | `8c46e95b1a07cecc` | `minimal` (0) | `minimal` (0), `low` (1), `medium` (4), `high` (2) | 🚀 Risposte istantanee con minima latenza. |
@@ -30,8 +31,8 @@ Dall'interfaccia web di `gemini.google.com` (verificata da cattura del traffico 
 
 Ogni famiglia di modelli richiede una struttura specifica per non incorrere nel fallback di Google:
 
+* **Neon & Pro**: `idx 14 = 3`, `idx 15 = <livello>`, capabilities `[4,33,22,5,6,8,16,19,20,38]`
 * **Argon & Hydrogen & Flash**: `idx 14 = 1`, `idx 15 = <livello>`, capabilities `[4,33,22,5,6,8,16,19,20,38]`
-* **Pro**: `idx 14 = 3`, `idx 15 = <livello>`, capabilities `[4,33,22,5,6,8,16,19,20,38]`
 * **Flash-Lite**: `idx 14 = 6`, `idx 15 = <livello>`
 
 ### Codici dei Livelli di Thinking
@@ -47,7 +48,15 @@ Ogni famiglia di modelli richiede una struttura specifica per non incorrere nel 
 
 ## 📌 Alias Supportati per Chiamate API
 
-### 1. Gemini 4 Argon
+### 1. Gemini 4 Neon
+- `gemini-4-neon`, `neon`, `4-neon`, `gemini-neon` *(default: medium)*
+- `gemini-4-neon-thinking-minimal`, `gemini-4-neon-minimal`, `neon-minimal` *(minimal: 0)*
+- `gemini-4-neon-thinking-low`, `gemini-4-neon-low`, `neon-low` *(low: 1)*
+- `gemini-4-neon-thinking-medium`, `gemini-4-neon-medium`, `neon-medium` *(medium: 4)*
+- `gemini-4-neon-thinking-high`, `gemini-4-neon-high`, `neon-high` *(high: 2)*
+- `gemini-4-neon-thinking-xhigh`, `gemini-4-neon-xhigh`, `neon-xhigh` *(xhigh: 8)*
+
+### 2. Gemini 4 Argon
 - `gemini-4-argon`, `argon`, `4-argon`, `gemini-4` *(default: medium)*
 - `gemini-4-argon-thinking-low`, `gemini-4-argon-low`, `argon-low`, `thinking-low`
 - `gemini-4-argon-thinking-medium`, `gemini-4-argon-medium`, `argon-medium`, `thinking-medium`

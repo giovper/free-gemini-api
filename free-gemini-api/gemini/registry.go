@@ -43,14 +43,14 @@ func (m *ModelConfig) BuildHeaderValue() string {
 		s := m.HeaderTemplate
 		if strings.Contains(s, "%s") && strings.Contains(s, "%d") {
 			lvl := m.ThinkingLevel
-			if lvl <= 0 {
+			if lvl < 0 {
 				lvl = 1
 			}
 			return fmt.Sprintf(s, m.ModeID, lvl)
 		}
 		if strings.Contains(s, "%d") {
 			lvl := m.ThinkingLevel
-			if lvl <= 0 {
+			if lvl < 0 {
 				lvl = 1
 			}
 			return fmt.Sprintf(s, lvl)
@@ -208,6 +208,88 @@ var DefaultBuiltinModels = []ModelConfig{
 		MinTier:        "free",
 		Aliases:        []string{"gemini-4-hydrogen-xhigh", "hydrogen-thinking-xhigh", "hydrogen-xhigh"},
 		Capabilities:   []string{"chat", "stream", "vision", "thinking", "tools", "frontier"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+
+	// NOTE: Dal HAR catturato il 2026-11-21 (net-log-gemini-neon.har), Google Web identifica
+	// Gemini 4 Neon con il modeID hash "e6fa609c3fa255c0" e la stringa simbolica "neon",
+	// con family index 3 nel protocollo JSPB. Supporta tutti i livelli di deep reasoning.
+	{
+		ID:             "gemini-4-neon",
+		DisplayName:    "Google Gemini 4 Neon",
+		Description:    "Cutting-edge frontier intelligence with dynamic adaptive reasoning (Medium=4)",
+		ModeID:         "neon",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,3,%d,null,null,null,null]`,
+		ThinkingLevel:  4, // Default Level: medium
+		MinTier:        "auth",
+		Aliases:        []string{"4-neon", "gemini-neon", "neon", "Neon4p0", "e6fa609c3fa255c0"},
+		Capabilities:   []string{"chat", "stream", "vision", "thinking", "tools", "complex_tasks", "frontier"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-4-neon-thinking-minimal",
+		DisplayName:    "Google Gemini 4 Neon (Thinking Minimal)",
+		Description:    "Frontier intelligence with instant, low-latency reasoning (Minimal=0)",
+		ModeID:         "neon",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,3,%d,null,null,null,null]`,
+		ThinkingLevel:  0,
+		MinTier:        "auth",
+		Aliases:        []string{"gemini-4-neon-minimal", "neon-thinking-minimal", "neon-minimal"},
+		Capabilities:   []string{"chat", "stream", "thinking", "fast", "frontier"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-4-neon-thinking-low",
+		DisplayName:    "Google Gemini 4 Neon (Thinking Low)",
+		Description:    "Frontier intelligence with quick and efficient reasoning (Low=1)",
+		ModeID:         "neon",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,3,%d,null,null,null,null]`,
+		ThinkingLevel:  1,
+		MinTier:        "auth",
+		Aliases:        []string{"gemini-4-neon-low", "neon-thinking-low", "neon-low"},
+		Capabilities:   []string{"chat", "stream", "thinking", "math", "code", "frontier"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-4-neon-thinking-medium",
+		DisplayName:    "Google Gemini 4 Neon (Thinking Medium)",
+		Description:    "Frontier intelligence with balanced depth reasoning (Medium=4)",
+		ModeID:         "neon",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,3,%d,null,null,null,null]`,
+		ThinkingLevel:  4,
+		MinTier:        "auth",
+		Aliases:        []string{"gemini-4-neon-medium", "neon-thinking-medium", "neon-medium"},
+		Capabilities:   []string{"chat", "stream", "thinking", "math", "code", "complex_tasks", "frontier"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-4-neon-thinking-high",
+		DisplayName:    "Google Gemini 4 Neon (Thinking High)",
+		Description:    "Frontier intelligence with deep, multi-step analytical reasoning (High=2)",
+		ModeID:         "neon",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,3,%d,null,null,null,null]`,
+		ThinkingLevel:  2,
+		MinTier:        "auth",
+		Aliases:        []string{"gemini-4-neon-high", "neon-thinking-high", "neon-high"},
+		Capabilities:   []string{"chat", "stream", "thinking", "math", "code", "complex_tasks", "frontier"},
+		IsDefault:      false,
+		Source:         "builtin",
+	},
+	{
+		ID:             "gemini-4-neon-thinking-xhigh",
+		DisplayName:    "Google Gemini 4 Neon (Thinking XHigh)",
+		Description:    "Frontier intelligence with maximum depth reasoning exploration (XHigh=8)",
+		ModeID:         "neon",
+		HeaderTemplate: `[1,null,null,null,"%s",null,null,null,[4,33,22,5,6,8,16,19,20,38],null,null,null,null,null,3,%d,null,null,null,null]`,
+		ThinkingLevel:  8,
+		MinTier:        "auth",
+		Aliases:        []string{"gemini-4-neon-xhigh", "neon-thinking-xhigh", "neon-xhigh"},
+		Capabilities:   []string{"chat", "stream", "thinking", "math", "code", "complex_tasks", "frontier"},
 		IsDefault:      false,
 		Source:         "builtin",
 	},
@@ -758,6 +840,37 @@ func (r *ModelRegistry) Resolve(name string) *ModelConfig {
 			}
 		}
 		if m, ok := r.models["gemini-4-argon"]; ok {
+			return m
+		}
+	}
+
+	if strings.Contains(clean, "neon") {
+		if hasXHigh {
+			if m, ok := r.models["gemini-4-neon-thinking-xhigh"]; ok {
+				return m
+			}
+		}
+		if hasHigh {
+			if m, ok := r.models["gemini-4-neon-thinking-high"]; ok {
+				return m
+			}
+		}
+		if hasLow {
+			if m, ok := r.models["gemini-4-neon-thinking-low"]; ok {
+				return m
+			}
+		}
+		if hasMinimal {
+			if m, ok := r.models["gemini-4-neon-thinking-minimal"]; ok {
+				return m
+			}
+		}
+		if hasMed {
+			if m, ok := r.models["gemini-4-neon-thinking-medium"]; ok {
+				return m
+			}
+		}
+		if m, ok := r.models["gemini-4-neon"]; ok {
 			return m
 		}
 	}
